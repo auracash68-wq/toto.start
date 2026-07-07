@@ -1,0 +1,6 @@
+{
+  "name": "TOTO START",
+  "description": "Premium Daly BMS Controller for TOTO Vehicles",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

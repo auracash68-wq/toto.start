@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Battery Shell Outline -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#39FF14"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M 44,28 L 64,28 M 38,32 L 70,32 L 70,84 A 4,4 0 0 1 66,88 L 42,88 A 4,4 0 0 1 38,84 Z" />
+    <!-- Battery Tip -->
+    <path
+        android:fillColor="#39FF14"
+        android:pathData="M 48,22 L 60,22 L 60,26 L 48,26 Z" />
+    <!-- Lightning Bolt inside -->
+    <path
+        android:fillColor="#39FF14"
+        android:pathData="M 58,38 L 45,54 L 52,54 L 47,72 L 63,50 L 55,50 Z" />
+</vector>
