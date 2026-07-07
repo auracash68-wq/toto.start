@@ -1,21 +1,61 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# TOTO Smart BMS Client
 
-# Run and deploy your AI Studio app
+A production-ready Android application built with Jetpack Compose, Kotlin Coroutines, Flow, and Material Design 3. This client connects with smart Battery Management Systems (BMS) over Bluetooth Low Energy (BLE) to display real-time telemetry, and synchronizes system status, alerts, and metrics to a secure cloud database in real-time.
 
-This contains everything you need to run your app locally.
+## Features
 
-View your app in AI Studio: https://ai.studio/apps/420e5370-7bea-473f-8d6d-40fca71fc8f0
+- **Bluetooth Low Energy (BLE) BMS Integration**: Automated background scanning, parsing, and telemetry streaming for smart BMS hardware.
+- **Real-Time Telemetry Dashboard**: Modern M3 dashboard displaying voltage, current, state of charge (SoC), individual cell voltages, and active protection alerts.
+- **Secure Cloud Sync (Supabase)**: Real-time user authentication and telemetry data persistence. Automatically falls back gracefully to local preview mode if credentials are omitted.
+- **Secured Credentials**: All API credentials are injected at compile-time via AI Studio Secrets (`.env` and `BuildConfig`), keeping sensitive keys safe and untracked.
 
-## Run Locally
+## Project Architecture
 
-**Prerequisites:**  [Android Studio](https://developer.android.com/studio)
+The codebase adheres to the **Model-View-ViewModel (MVVM)** design pattern and **Clean Architecture** principles:
 
+```
+├── app
+│   ├── src
+│   │   └── main
+│   │       ├── AndroidManifest.xml
+│   │       ├── java/com/example
+│   │       │   ├── MainActivity.kt           # App container and theme setup
+│   │       │   ├── data                      # Data Layer (BLE, Supabase, Storage)
+│   │       │   │   ├── BluetoothBmsManager.kt # Core BLE scanning and parsing engine
+│   │       │   │   └── SupabaseManager.kt     # Real-time Cloud Auth & Telemetry sync
+│   │       │   └── ui                        # Presentation Layer
+│   │       │       ├── screens               # Screen composables (Dashboard, Login, Logs)
+│   │       │       └── theme                 # Theme, colors, typography (M3)
+│   │       └── res                           # Android Resource xml files
+│   └── build.gradle.kts                      # App-module Gradle build config
+├── gradle
+│   ├── libs.versions.toml                    # Centralized Version Catalog
+│   └── wrapper                               # Standard Gradle Wrapper distribution
+├── build.gradle.kts                          # Project-level Gradle build config
+├── settings.gradle.kts                       # Settings and repository catalog
+└── gradle.properties                         # Gradle JVM configurations
+```
 
-1. Open Android Studio
-2. Select **Open** and choose the directory containing this project
-3. Allow Android Studio to fix any incompatibilities as it imports the project.
-4. Create a file named `.env` in the project directory and set `GEMINI_API_KEY` in that file to your Gemini API key (see `.env.example` for an example)
-5. Remove this line from the app's `build.gradle.kts` file: `signingConfig = signingConfigs.getByName("debugConfig")`
-6. Run the app on an emulator or physical device
+## Getting Started
+
+### Configuration
+Credentials like `SUPABASE_URL` and `SUPABASE_ANON_KEY` are read securely from the environment using **Secrets Management**.
+1. Create a `.env` file at the root.
+2. Define your variables as follows:
+   ```env
+   SUPABASE_URL=https://your-project.supabase.co
+   SUPABASE_ANON_KEY=your-anon-key
+   ```
+
+### Building the Project
+You can build the project from Android Studio or using standard Gradle:
+
+- **Assemble Debug APK**:
+  ```bash
+  ./gradlew assembleDebug
+  ```
+
+- **Assemble Release APK**:
+  ```bash
+  ./gradlew assembleRelease
+  ```
