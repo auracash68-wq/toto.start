@@ -43,7 +43,13 @@ class SupabaseManager(private val context: Context) {
 
     val supabaseUrl: String
         get() = try {
-            BuildConfig.SUPABASE_URL.trim().removeSuffix("/")
+            var url = BuildConfig.SUPABASE_URL.trim().removeSuffix("/")
+            if (url.endsWith("/rest/v1")) {
+                url = url.removeSuffix("/rest/v1")
+            } else if (url.endsWith("/rest/v1/")) {
+                url = url.removeSuffix("/rest/v1/")
+            }
+            url
         } catch (e: Exception) {
             "https://placeholder-project.supabase.co"
         }
@@ -143,6 +149,7 @@ class SupabaseManager(private val context: Context) {
 
                             _currentUser.value = UserSession(userEmail, token, true, false)
                             _authError.value = null
+                            deleteOldTelemetryData()
                             scope.launch(Dispatchers.Main) { onSuccess() }
                         } catch (e: Exception) {
                             _authError.value = "JSON Parsing failed: ${e.message}"
@@ -215,9 +222,11 @@ class SupabaseManager(private val context: Context) {
 
                             _currentUser.value = UserSession(userEmail, token, true, false)
                             _authError.value = null
+                            deleteOldTelemetryData()
                             scope.launch(Dispatchers.Main) { onSuccess() }
                         } catch (e: Exception) {
                             _currentUser.value = UserSession(email, "signup-token", true, false)
+                            deleteOldTelemetryData()
                             scope.launch(Dispatchers.Main) { onSuccess() }
                         }
                     } else {
@@ -251,9 +260,19 @@ class SupabaseManager(private val context: Context) {
             _currentUser.value = UserSession("google.user@gmail.com", "google-oauth-token-999", true, true)
             _authError.value = null
             _isAuthLoading.value = false
+            deleteOldTelemetryData()
             scope.launch(Dispatchers.Main) { onSuccess() }
             Log.i(TAG, "Google Sign-In simulation completed successfully with Supabase session.")
         }
+    }
+
+    fun bypassLogin(onSuccess: () -> Unit = {}) {
+        _currentUser.value = UserSession("test.bypass@gmail.com", "test-bypass-token-777", true, false)
+        _authError.value = null
+        _isAuthLoading.value = false
+        deleteOldTelemetryData()
+        scope.launch(Dispatchers.Main) { onSuccess() }
+        Log.i(TAG, "Login bypassed for development/testing.")
     }
 
     fun logout() {
@@ -339,6 +358,7 @@ class SupabaseManager(private val context: Context) {
                     if (resp.isSuccessful) {
                         _syncStatus.value = "Synced: Compressed ${currentBufferList.size} ticks to database successfully!"
                         Log.i(TAG, "Supabase Database sync succeeded: Packed ${currentBufferList.size} ticks to database.")
+                        deleteOldTelemetryData()
                     } else {
                         val bodyText = resp.body?.string() ?: ""
                         _syncStatus.value = "Sync Error: ${resp.code}"
@@ -362,10 +382,54 @@ class SupabaseManager(private val context: Context) {
         return false
     }
 
+    /**
+     * Deletes telemetry records older than 3 months to keep the database size within limits
+     * as requested by the user.
+     */
+    fun deleteOldTelemetryData() {
+        val user = _currentUser.value
+        if (user == null || !isSupabaseConfigured) return
+
+        scope.launch {
+            try {
+                val calendar = java.util.Calendar.getInstance()
+                calendar.add(java.util.Calendar.MONTH, -3)
+                val cutoffDate = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(calendar.time)
+
+                Log.d(TAG, "Executing 3-month cleanup. Deleting telemetry logs older than: $cutoffDate")
+
+                val request = Request.Builder()
+                    .url("$supabaseUrl/rest/v1/bms_telemetry_logs?timestamp=lt.$cutoffDate")
+                    .header("apikey", supabaseAnonKey)
+                    .header("Authorization", "Bearer $supabaseAnonKey")
+                    .delete()
+                    .build()
+
+                client.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e(TAG, "Failed to run 3-month cleanup query: ${e.message}")
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        response.use { resp ->
+                            if (resp.isSuccessful) {
+                                Log.i(TAG, "Successfully cleaned up telemetry logs older than 3 months ($cutoffDate).")
+                            } else {
+                                Log.e(TAG, "3-month cleanup query returned non-success code: ${resp.code}")
+                            }
+                        }
+                    }
+                })
+            } catch (e: Exception) {
+                Log.e(TAG, "Error calculating cutoff date for 3-month cleanup: ${e.message}")
+            }
+        }
+    }
+
     private fun parseErrorJson(responseBody: String): String {
         return try {
             val obj = JSONObject(responseBody)
-            obj.optString("error_description", obj.optString("msg", "Request failed"))
+            obj.optString("error_description", obj.optString("msg", obj.optString("message", "Request failed")))
         } catch (e: Exception) {
             "Request failed with server error"
         }

@@ -393,6 +393,44 @@ fun LoginScreen(
                     }
                 }
 
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // BYPASS LOGIN BUTTON FOR DEVELOPMENT/TESTING (Bengali translation included)
+                OutlinedButton(
+                    onClick = {
+                        localErrorMsg = null
+                        supabaseManager.bypassLogin()
+                    },
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = NeonGreen
+                    ),
+                    border = BorderStroke(1.5.dp, NeonGreen),
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                        .testTag("bypass_login_button"),
+                    enabled = !isAuthLoading
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = "Play Icon",
+                            tint = NeonGreen,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "Bypass Login (লগইন ছাড়াই প্রবেশ করুন)",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
                 // Diagnostics warning at login
                 if (!isInternetConnected) {
                     Spacer(modifier = Modifier.height(24.dp))
