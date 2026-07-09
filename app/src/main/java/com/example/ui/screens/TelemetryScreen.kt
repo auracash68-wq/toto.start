@@ -33,8 +33,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.BluetoothBmsManager
 import com.example.data.TelemetryData
-import com.example.data.SupabaseManager
-import androidx.compose.foundation.lazy.LazyColumn
 import com.example.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -42,27 +40,12 @@ import kotlinx.coroutines.launch
 @Composable
 fun TelemetryScreen(
     bmsManager: BluetoothBmsManager,
-    supabaseManager: SupabaseManager,
     onBackTap: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val telemetry by bmsManager.telemetry.collectAsState()
     val isBmsActive by bmsManager.isBmsActive.collectAsState()
     val connectedDevice by bmsManager.connectedDevice.collectAsState()
-    val syncStatus by supabaseManager.syncStatus.collectAsState()
-
-    // Automatic compressed logging sync to Supabase Database
-    LaunchedEffect(telemetry, isBmsActive) {
-        if (isBmsActive && telemetry.voltage > 0.1f) {
-            supabaseManager.logTelemetryData(
-                voltage = telemetry.voltage,
-                current = telemetry.current,
-                temp = telemetry.temperature,
-                power = telemetry.power,
-                charge = telemetry.chargePercentage
-            )
-        }
-    }
 
     var showConfirmationSheet by remember { mutableStateOf(false) }
     var showDeactivateDialog by remember { mutableStateOf(false) }
@@ -351,44 +334,6 @@ fun TelemetryScreen(
                                     modifier = Modifier.weight(1f)
                                 )
                             }
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            // Supabase Cloud Sync Status Row (Only visible when sending active data)
-                            Card(
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = GraphiteGray),
-                                border = BorderStroke(1.dp, BorderGray),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.CloudQueue,
-                                        contentDescription = "Cloud Status",
-                                        tint = NeonGreen,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Column {
-                                        Text(
-                                            text = "SUPABASE CLOUD LOGGER",
-                                            color = NeonGreen,
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Black,
-                                            letterSpacing = 1.sp
-                                        )
-                                        Text(
-                                            text = syncStatus,
-                                            color = TextWhite,
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                    }
-                                }
-                            }
                         }
                     } else {
                         // GORGEOUS TROUBLESHOOTING CARD (When disengaged/no live data)
@@ -459,28 +404,6 @@ fun TelemetryScreen(
                                         )
                                         Text(
                                             text = "Ensure your phone's Bluetooth transceiver is turned on and active. Disabling Bluetooth will prevent local status telemetry updates.",
-                                            color = TextGray,
-                                            fontSize = 11.sp
-                                        )
-                                    }
-                                }
-
-                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    Icon(
-                                        imageVector = Icons.Default.WifiOff,
-                                        contentDescription = null,
-                                        tint = CrimsonRed,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Column {
-                                        Text(
-                                            text = "3. Cloud Portal Offline Link",
-                                            color = TextWhite,
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Text(
-                                            text = "If network data is unavailable, cloud-based telemetry sync with Supabase will pause. Data streams will sync automatically once online.",
                                             color = TextGray,
                                             fontSize = 11.sp
                                         )
@@ -1082,52 +1005,8 @@ fun TelemetryScreen(
                                 .verticalScroll(rememberScrollState()),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Text(
-                                text = "CLOUD STATUS",
-                                color = NeonGreen,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Black,
-                                letterSpacing = 1.sp
-                            )
-
-                            Card(
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (supabaseManager.isSupabaseConfigured) NeonGreen.copy(alpha = 0.1f) else SaffronColor.copy(alpha = 0.1f)
-                                ),
-                                border = BorderStroke(
-                                    1.dp,
-                                    if (supabaseManager.isSupabaseConfigured) NeonGreen.copy(alpha = 0.3f) else SaffronColor.copy(alpha = 0.3f)
-                                ),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Text(
-                                        text = if (supabaseManager.isSupabaseConfigured) "● CONNECTED TO SECURE CLOUD" else "▲ DEMO / OFFLINE FALLBACK MODE",
-                                        color = if (supabaseManager.isSupabaseConfigured) NeonGreen else SaffronColor,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        text = if (supabaseManager.isSupabaseConfigured) {
-                                            "API connection keys are compiled securely inside the application binary. Users cannot modify or inspect them."
-                                        } else {
-                                            "Database keys are not set. Configure credentials in the AI Studio Secrets panel as SUPABASE_URL and SUPABASE_ANON_KEY to build the production release."
-                                        },
-                                        color = TextWhite.copy(alpha = 0.8f),
-                                        fontSize = 10.sp,
-                                        lineHeight = 14.sp
-                                    )
-                                }
-                            }
-
-                            Divider(color = BorderGray, thickness = 0.5.dp, modifier = Modifier.padding(vertical = 4.dp))
-
-                            Text(
-                                text = "HARDWARE CONTROLLER (DALY BMS)",
+                             Text(
+                                 text = "HARDWARE CONTROLLER (DALY BMS)",
                                 color = SaffronColor,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Black,

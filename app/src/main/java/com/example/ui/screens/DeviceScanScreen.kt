@@ -44,7 +44,6 @@ fun DeviceScanScreen(
     val devices by bmsManager.scannedDevices.collectAsState()
 
     val isBluetoothOn by bmsManager.isBluetoothOn.collectAsState()
-    val isInternetOn by bmsManager.isInternetOn.collectAsState()
     val isPermissionGranted by bmsManager.isPermissionGranted.collectAsState()
 
     // Determine relevant runtime permissions based on Android Version
@@ -227,38 +226,7 @@ fun DeviceScanScreen(
                     )
                 }
 
-                // 2. Internet Check
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (isInternetOn) Icons.Default.CheckCircle else Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = if (isInternetOn) NeonGreen else CrimsonRed,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Text(
-                            text = "Supabase Cloud Database",
-                            color = TextWhite,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                    Text(
-                        text = if (isInternetOn) "ONLINE" else "OFFLINE",
-                        color = if (isInternetOn) NeonGreen else CrimsonRed,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                // 3. Permissions Check
+                // 2. Permissions Check
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -290,7 +258,7 @@ fun DeviceScanScreen(
                 }
 
                 // Warnings with exact troubleshooting guidance
-                if (!isBluetoothOn || !isInternetOn || !isPermissionGranted) {
+                if (!isBluetoothOn || !isPermissionGranted) {
                     Divider(color = BorderGray, thickness = 0.5.dp, modifier = Modifier.padding(vertical = 4.dp))
 
                     Column(
@@ -299,14 +267,6 @@ fun DeviceScanScreen(
                         if (!isBluetoothOn) {
                             Text(
                                 text = "⚠️ Bluetooth is disabled. Please turn on Bluetooth in your system settings to connect to Daly BMS.",
-                                color = CrimsonRed,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        if (!isInternetOn) {
-                            Text(
-                                text = "⚠️ No internet connection. Please enable network data or Wi-Fi to synchronize telemetry with Supabase.",
                                 color = CrimsonRed,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
